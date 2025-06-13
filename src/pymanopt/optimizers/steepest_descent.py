@@ -98,12 +98,19 @@ class SteepestDescent(Optimizer):
 
             column_printer.print_row([iteration, cost, gradient_norm])
 
-            self._add_log_entry(
-                iteration=iteration,
-                point=x,
-                cost=cost,
-                gradient_norm=gradient_norm,
+            start_log_time = time.time()
+            log_entry = {
+                "iteration": iteration,
+                "cost": cost,
+                "gradient_norm": gradient_norm,
+                "time": start_log_time,
+            }
+
+            log_callable_entry = self._log_callable(
+                point=x, cost=cost, iteration=iteration
             )
+            log_entry["log_time"] = time.time() - start_log_time
+            self._add_log_entry(**{**log_entry, **log_callable_entry})
 
             # Descent direction is minus the gradient
             desc_dir = -grad

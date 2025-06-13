@@ -127,12 +127,17 @@ def _beta_liu_storey(
     return max(0, min(beta_ls, beta_cd))
 
 
+def _beta_steepest_descent(*args, **kwargs):
+    return 0
+
+
 BETA_RULES = {
     "FletcherReeves": _beta_fletcher_reeves,
     "HagerZhang": _beta_hager_zhang,
     "HestenesStiefel": _beta_hestenes_stiefel,
     "PolakRibiere": _beta_polak_ribiere,
     "LiuStorey": _beta_liu_storey,
+    "SteepestDescent": _beta_steepest_descent,
 }
 
 
@@ -148,7 +153,7 @@ class ConjugateGradient(Optimizer):
     Args:
         beta_rule: Conjugate gradient beta rule used to construct the new
             search direction. Valid choices are ``{"FletcherReeves",
-            "PolakRibiere", "HestenesStiefel", "HagerZhang"}``.
+            "PolakRibiere", "HestenesStiefel", "HagerZhang", "SteepestDescent"}``.
         orth_value: Parameter for Powell's restart strategy.
             An infinite value disables this strategy.
         line_searcher: The line search method.
@@ -261,12 +266,19 @@ class ConjugateGradient(Optimizer):
 
             column_printer.print_row([iteration, cost, gradient_norm])
 
-            self._add_log_entry(
-                iteration=iteration,
-                point=x,
-                cost=cost,
-                gradient_norm=gradient_norm,
+            start_log_time = time.time()
+            log_entry = {
+                "iteration": iteration,
+                "cost": cost,
+                "gradient_norm": gradient_norm,
+                "time": start_log_time,
+            }
+
+            log_callable_entry = self._log_callable(
+                point=x, cost=cost, iteration=iteration
             )
+            log_entry["log_time"] = time.time() - start_log_time
+            self._add_log_entry(**{**log_entry, **log_callable_entry})
 
             stopping_criterion = self._check_stopping_criterion(
                 start_time=start_time,

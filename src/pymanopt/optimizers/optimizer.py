@@ -2,7 +2,7 @@ import abc
 import collections
 import time
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Callable
 
 import numpy as np
 
@@ -47,6 +47,7 @@ class Optimizer(metaclass=abc.ABCMeta):
         max_cost_evaluations: int = 5000,
         verbosity: int = 2,
         log_verbosity: int = 0,
+        log_callable: Callable = lambda *args, **kwargs: {},
     ):
         self._max_time = max_time
         self._max_iterations = max_iterations
@@ -55,6 +56,7 @@ class Optimizer(metaclass=abc.ABCMeta):
         self._max_cost_evaluations = max_cost_evaluations
         self._verbosity = verbosity
         self._log_verbosity = log_verbosity
+        self._log_callable = log_callable
 
         self._log = None
 
@@ -131,17 +133,15 @@ class Optimizer(metaclass=abc.ABCMeta):
                 "max_cost_evaluations": self._max_cost_evaluations,
             },
             "optimizer_parameters": optimizer_parameters,
-            "iterations": collections.defaultdict(list)
-            if self._log_verbosity >= 1
-            else None,
+            "iterations": (
+                collections.defaultdict(list)
+                if self._log_verbosity >= 1
+                else None
+            ),
         }
 
-    def _add_log_entry(self, *, iteration, point, cost, **kwargs):
+    def _add_log_entry(self, **kwargs):
         if self._log_verbosity <= 0:
             return
-        self._log["iterations"]["time"].append(time.time())
-        self._log["iterations"]["iteration"].append(iteration)
-        self._log["iterations"]["point"].append(point)
-        self._log["iterations"]["cost"].append(cost)
         for key, value in kwargs.items():
             self._log["iterations"][key].append(value)
