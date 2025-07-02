@@ -139,3 +139,32 @@ class AdaptiveLineSearcher:
             self._oldalpha = 2 * alpha
 
         return step_size, newx
+
+
+class ConstantLineSearcher:
+    """Constant step-size line-search algorithm."""
+
+    def __init__(self, step_size=1.0):
+        self.step_size = float(step_size)
+
+    def search(self, objective, manifold, x, d, f0, df0):
+        """Function to perform backtracking line search.
+
+        Args:
+            objective: Objective function to optimize (ignored).
+            manifold: The manifold to optimize over.
+            x: Starting point on the manifold.
+            d: Tangent vector at ``x``, i.e., a descent direction.
+            df0: Directional derivative at ``x`` along ``d`` (ignored).
+
+        Returns:
+            A tuple ``(step_size, newx)`` where ``step_size`` is the norm of
+            the vector retracted to reach the suggested iterate ``newx`` from
+            ``x``.
+        """
+        step_size = self.step_size
+
+        # Make the chosen step and compute the cost there.
+        newx = manifold.retraction(x, step_size * d)
+
+        return step_size, newx
