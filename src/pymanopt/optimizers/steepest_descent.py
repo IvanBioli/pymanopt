@@ -84,33 +84,28 @@ class SteepestDescent(Optimizer):
             optimizer_parameters={"line_searcher": line_searcher}
         )
 
+        # Calculate cost, grad and gradient_norm for first iteration
+        cost = objective(x)
+        grad = gradient(x)
+        gradient_norm = manifold.norm(x, grad)
+        step_size = np.nan
+
         # Initialize iteration counter and timer
         iteration = 0
         start_time = time.time()
 
+        self._logstats(
+                iteration=iteration,
+                x=x,
+                cost=cost,
+                gradient_norm=gradient_norm,
+                step_size=step_size,
+        )
+
         while True:
             iteration += 1
 
-            # Calculate new cost, grad and gradient_norm
-            cost = objective(x)
-            grad = gradient(x)
-            gradient_norm = manifold.norm(x, grad)
-
             column_printer.print_row([iteration, cost, gradient_norm])
-
-            start_log_time = time.time()
-            log_entry = {
-                "iteration": iteration,
-                "cost": cost,
-                "gradient_norm": gradient_norm,
-                "time": start_log_time,
-            }
-
-            log_callable_entry = self._log_callable(
-                point=x, cost=cost, iteration=iteration
-            )
-            log_entry["log_time"] = time.time() - start_log_time
-            self._add_log_entry(**{**log_entry, **log_callable_entry})
 
             # Descent direction is minus the gradient
             desc_dir = -grad
@@ -119,6 +114,11 @@ class SteepestDescent(Optimizer):
             step_size, x = line_searcher.search(
                 objective, manifold, x, desc_dir, cost, -(gradient_norm**2)
             )
+
+            # Calculate cost, grad and gradient_norm for next iteration
+            cost = objective(x)
+            grad = gradient(x)
+            gradient_norm = manifold.norm(x, grad)
 
             stopping_criterion = self._check_stopping_criterion(
                 start_time=start_time,
@@ -133,6 +133,14 @@ class SteepestDescent(Optimizer):
                     print("")
                 break
 
+            self._logstats(
+                iteration=iteration,
+                x=x,
+                cost=cost,
+                gradient_norm=gradient_norm,
+                step_size=step_size,
+            )
+
         return self._return_result(
             start_time=start_time,
             point=x,
@@ -143,3 +151,20 @@ class SteepestDescent(Optimizer):
             step_size=step_size,
             gradient_norm=gradient_norm,
         )
+
+    def _logstats(self, iteration, x, cost, gradient_norm, step_size):
+        start_log_time = time.time()
+        log_entry = {
+            "iteration": iteration,
+            "cost": cost,
+            "gradient_norm": gradient_norm,
+            "step_size": step_size,
+            "time": start_log_time,
+            "alpha": step_size / gradient_norm,
+        }
+
+        log_callable_entry = self._log_callable(
+            point=x, cost=cost, iteration=iteration
+        )
+        log_entry["log_time"] = time.time() - start_log_time
+        self._add_log_entry(**{**log_entry, **log_callable_entry})
