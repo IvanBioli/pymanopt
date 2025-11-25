@@ -16,7 +16,7 @@ else:
     except ImportError:
         from jax.config import config
 
-    config.update("jax_enable_x64", True)
+    # config.update("jax_enable_x64", True)
 
 from ...tools import bisect_sequence, unpack_singleton_sequence_return_value
 from ._backend import Backend
