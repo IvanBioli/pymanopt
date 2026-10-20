@@ -2,6 +2,7 @@ import time
 from copy import deepcopy
 
 import numpy as np
+import gc
 
 from pymanopt.optimizers.line_search import AdaptiveLineSearcher
 from pymanopt.optimizers.optimizer import Optimizer, OptimizerResult
@@ -354,6 +355,9 @@ class ConjugateGradient(Optimizer):
             x = newx
             cost = newcost
             grad = newgrad
+            del newgrad
+            del newx
+            gc.collect()
             Pgrad = Pnewgrad
             gradient_norm = newgradient_norm
             gradPgrad = newgradPnewgrad
